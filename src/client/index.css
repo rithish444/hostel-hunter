@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset and full-viewport mobile app layout */
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #0a0f1d;
+  color: #f3f4f6;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Leaflet Dark Mode CartoDB Dark Matter / Invert Styling */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  background-color: #0a0f1d !important;
+  font-family: inherit;
+}
+
+.dark-tiles {
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+}
+
+/* Custom Marker Styling */
+.player-marker-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.radar-circle-blur {
+  animation: radar-flicker 2s ease-in-out infinite;
+}
+
+@keyframes radar-flicker {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.45; }
+}
+
+/* Red Zone Hazard Striped Pattern */
+.red-zone-polygon {
+  animation: hazard-flash 1.5s ease-in-out infinite;
+}
+
+@keyframes hazard-flash {
+  0%, 100% { fill-opacity: 0.25; stroke-opacity: 0.8; }
+  50% { fill-opacity: 0.45; stroke-opacity: 1; }
+}
+
+/* Safe area padding for notch phones */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 12px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 12px);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.8);
+}
