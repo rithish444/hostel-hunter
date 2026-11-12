@@ -16,6 +16,7 @@ import { EmergencyMeetingModal } from './components/EmergencyMeetingModal.js';
 import { HowToPlayModal } from './components/HowToPlayModal.js';
 import { LeaderboardModal } from './components/LeaderboardModal.js';
 import { ResultsView } from './components/ResultsView.js';
+import { ExitConfirmationModal } from './components/ExitConfirmationModal.js';
 import { Radio, Clock, ShieldAlert, Crosshair, Users, MessageSquare, Settings, LogOut } from 'lucide-react';
 
 export const AppContent: React.FC = () => {
@@ -38,6 +39,7 @@ export const AppContent: React.FC = () => {
   const [showQRDisplay, setShowQRDisplay] = useState(false);
   const [showTasks, setShowTasks] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [catchNotification, setCatchNotification] = useState<string | null>(null);
   const [hunterViewingMap, setHunterViewingMap] = useState<boolean>(false);
 
@@ -129,7 +131,7 @@ export const AppContent: React.FC = () => {
           <div className="flex flex-col gap-2 pt-1">
             <button
               onClick={() => setHunterViewingMap(true)}
-              className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-2xl shadow-lg transition flex items-center justify-center gap-2 text-xs"
+              className="w-full bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold py-3 rounded-2xl shadow-lg transition flex items-center justify-center gap-2 text-xs"
             >
               <Crosshair className="w-4 h-4" />
               <span>Open Tactical Map Now</span>
@@ -138,11 +140,19 @@ export const AppContent: React.FC = () => {
             {player.isHost && (
               <button
                 onClick={() => skipHidingPhase()}
-                className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 rounded-2xl shadow-lg transition flex items-center justify-center gap-2 text-xs"
+                className="w-full bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-bold py-2.5 rounded-2xl shadow-lg transition flex items-center justify-center gap-2 text-xs"
               >
                 <span>⚡ Skip Countdown & Start Hunt</span>
               </button>
             )}
+
+            <button
+              onClick={() => setShowExitConfirm(true)}
+              className="w-full bg-red-950/80 hover:bg-red-900 active:scale-95 border border-red-700/80 text-red-300 hover:text-white font-bold py-2.5 rounded-2xl transition flex items-center justify-center gap-2 text-xs"
+            >
+              <LogOut className="w-4 h-4 text-red-400" />
+              <span>{player.isHost ? 'Close & Dissolve Room' : 'Exit Match & Return Home'}</span>
+            </button>
           </div>
 
           <div className="flex justify-center gap-3 pt-1">
@@ -164,6 +174,16 @@ export const AppContent: React.FC = () => {
 
         {showChat && <ChatDrawer onClose={() => setShowChat(false)} />}
         {showHowToPlay && <HowToPlayModal onClose={() => setShowHowToPlay(false)} />}
+        <ExitConfirmationModal
+          isOpen={showExitConfirm}
+          isHost={player.isHost}
+          roomCode={roomCode || undefined}
+          onConfirm={() => {
+            setShowExitConfirm(false);
+            leaveRoom();
+          }}
+          onCancel={() => setShowExitConfirm(false)}
+        />
       </div>
     );
   }
@@ -222,18 +242,12 @@ export const AppContent: React.FC = () => {
           )}
 
           <button
-            onClick={() => {
-              const msg = player.isHost
-                ? 'Are you sure you want to close and dissolve the room for all players?'
-                : 'Are you sure you want to leave this match?';
-              if (window.confirm(msg)) {
-                leaveRoom();
-              }
-            }}
-            className="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-red-400 transition"
+            onClick={() => setShowExitConfirm(true)}
+            className="flex items-center gap-1.5 bg-red-950 hover:bg-red-900 active:scale-95 border border-red-600/80 text-red-200 hover:text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition shadow-lg shadow-red-950/60"
             title={player.isHost ? 'Close Room' : 'Leave Match'}
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5 text-red-400" />
+            <span>{player.isHost ? 'Close' : 'Exit'}</span>
           </button>
         </div>
       </div>
@@ -259,7 +273,10 @@ export const AppContent: React.FC = () => {
       {gameState.phase === 'hunting' && (
         <>
           {isSpectator ? (
-            <SpectatorHUD onOpenChat={() => setShowChat(true)} />
+            <SpectatorHUD
+              onOpenChat={() => setShowChat(true)}
+              onOpenExit={() => setShowExitConfirm(true)}
+            />
           ) : player.role === 'hunter' ? (
             <HunterHUD
               onOpenScanner={() => setShowScanner(true)}
@@ -318,6 +335,18 @@ export const AppContent: React.FC = () => {
       {showHostPanel && <HostControlPanel onClose={() => setShowHostPanel(false)} />}
       {showHowToPlay && <HowToPlayModal onClose={() => setShowHowToPlay(false)} />}
       {showLeaderboard && <LeaderboardModal onClose={() => setShowLeaderboard(false)} />}
+
+      {/* Universal Exit Confirmation Modal */}
+      <ExitConfirmationModal
+        isOpen={showExitConfirm}
+        isHost={player.isHost}
+        roomCode={roomCode || undefined}
+        onConfirm={() => {
+          setShowExitConfirm(false);
+          leaveRoom();
+        }}
+        onCancel={() => setShowExitConfirm(false)}
+      />
     </div>
   );
 };

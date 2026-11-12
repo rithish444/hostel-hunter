@@ -14,6 +14,7 @@ import {
   Sparkles,
   LogOut,
 } from 'lucide-react';
+import { ExitConfirmationModal } from './ExitConfirmationModal.js';
 
 interface LobbyViewProps {
   onOpenHowToPlay: () => void;
@@ -29,6 +30,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   const { gameState, player, roomCode, startGame, addBots, kickPlayer, leaveRoom } = useGame();
   const [copied, setCopied] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   if (!gameState || !player) return null;
 
@@ -49,12 +51,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   };
 
   const handleExitRoom = () => {
-    const confirmMessage = isHost
-      ? 'Are you sure you want to close and dissolve this room for all players?'
-      : 'Are you sure you want to leave this room?';
-    if (window.confirm(confirmMessage)) {
-      leaveRoom();
-    }
+    setShowExitConfirm(true);
   };
 
   return (
@@ -240,6 +237,17 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
           </button>
         </div>
       </div>
+
+      <ExitConfirmationModal
+        isOpen={showExitConfirm}
+        isHost={isHost}
+        roomCode={roomCode || undefined}
+        onConfirm={() => {
+          setShowExitConfirm(false);
+          leaveRoom();
+        }}
+        onCancel={() => setShowExitConfirm(false)}
+      />
     </div>
   );
 };

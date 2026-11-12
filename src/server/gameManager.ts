@@ -237,6 +237,19 @@ export class GameManager {
     } else {
       // Normal player leaving
       delete room.players[playerId];
+      if (room.phase === 'hunting') {
+        const aliveCrewmates = Object.values(room.players).filter(
+          (p) => p.role === 'crewmate' && p.status === 'alive'
+        );
+        const aliveHunters = Object.values(room.players).filter(
+          (p) => p.role === 'hunter' && p.status === 'alive'
+        );
+        if (aliveCrewmates.length === 0 && room.stats.totalCrewmates > 0) {
+          this.endGame(roomCode, 'hunters', 'All crewmates left or were eliminated!');
+        } else if (aliveHunters.length === 0 && room.stats.totalHunters > 0) {
+          this.endGame(roomCode, 'crewmates', 'All hunters left the match!');
+        }
+      }
       this.onStateChange(roomCode);
       return { success: true, isHostClosed: false };
     }

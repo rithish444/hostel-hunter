@@ -39,6 +39,7 @@ export const HostControlPanel: React.FC<HostControlPanelProps> = ({ onClose }) =
   const [newZoneRadius, setNewZoneRadius] = useState(20);
   const [newZoneFloor, setNewZoneFloor] = useState<number | 'all'>('all');
   const [newZoneSeverity, setNewZoneSeverity] = useState<'danger' | 'warning'>('danger');
+  const [confirmingDissolve, setConfirmingDissolve] = useState(false);
 
   if (!gameState || !player?.isHost) return null;
 
@@ -398,18 +399,39 @@ export const HostControlPanel: React.FC<HostControlPanelProps> = ({ onClose }) =
 
               {/* Danger Zone: Dissolve Room */}
               <div className="pt-2">
-                <button
-                  onClick={() => {
-                    if (window.confirm('Are you sure you want to completely end and dissolve this room for all players?')) {
-                      onClose();
-                      leaveRoom();
-                    }
-                  }}
-                  className="w-full bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-300 font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 text-xs"
-                >
-                  <LogOut className="w-4 h-4 text-red-400" />
-                  <span>End & Dissolve Match Room</span>
-                </button>
+                {confirmingDissolve ? (
+                  <div className="bg-red-950/90 border border-red-500 p-3 rounded-2xl flex flex-col gap-2 animate-in fade-in">
+                    <div className="text-xs font-black text-red-200">
+                      ⚠️ ARE YOU SURE? THIS CLOSES THE MATCH FOR EVERYONE.
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          onClose();
+                          leaveRoom();
+                        }}
+                        className="flex-1 bg-red-600 hover:bg-red-500 text-white font-black py-2 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>Yes, Close Room</span>
+                      </button>
+                      <button
+                        onClick={() => setConfirmingDissolve(false)}
+                        className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-3 py-2 rounded-xl text-xs"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmingDissolve(true)}
+                    className="w-full bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-300 font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 text-xs"
+                  >
+                    <LogOut className="w-4 h-4 text-red-400" />
+                    <span>End & Dissolve Match Room</span>
+                  </button>
+                )}
               </div>
             </div>
           )}

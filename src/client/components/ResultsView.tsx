@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { useGame } from '../context/GameContext.js';
-import { Trophy, Skull, Users, Clock, CheckCircle2, RotateCcw, ArrowRight } from 'lucide-react';
+import { Trophy, Skull, Users, Clock, CheckCircle2, RotateCcw, ArrowRight, LogOut } from 'lucide-react';
 
 interface ResultsViewProps {
   onPlayAgain: () => void;
@@ -103,10 +103,10 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ onPlayAgain }) => {
         {/* Action Button */}
         <button
           onClick={onPlayAgain}
-          className="w-full bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white font-bold py-3 rounded-2xl shadow-xl transition flex items-center justify-center gap-2"
+          className="w-full bg-gradient-to-r from-red-600 to-cyan-600 hover:from-red-500 hover:to-cyan-500 text-white font-black py-3 rounded-2xl shadow-xl transition flex items-center justify-center gap-2 text-xs uppercase tracking-wider"
         >
-          <RotateCcw className="w-4 h-4" />
-          <span>Return to Lobby</span>
+          <LogOut className="w-4 h-4" />
+          <span>Exit Match & Return Home</span>
         </button>
       </div>
     </div>

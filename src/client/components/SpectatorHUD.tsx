@@ -1,12 +1,13 @@
 import React from 'react';
 import { useGame } from '../context/GameContext.js';
-import { Eye, Skull, Users, MessageSquare } from 'lucide-react';
+import { Eye, MessageSquare, LogOut } from 'lucide-react';
 
 interface SpectatorHUDProps {
   onOpenChat: () => void;
+  onOpenExit: () => void;
 }
 
-export const SpectatorHUD: React.FC<SpectatorHUDProps> = ({ onOpenChat }) => {
+export const SpectatorHUD: React.FC<SpectatorHUDProps> = ({ onOpenChat, onOpenExit }) => {
   const { gameState, player } = useGame();
 
   if (!gameState || !player) return null;
@@ -31,13 +32,23 @@ export const SpectatorHUD: React.FC<SpectatorHUDProps> = ({ onOpenChat }) => {
             </div>
           </div>
 
-          <button
-            onClick={onOpenChat}
-            className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-xs px-3 py-1.5 rounded-lg border border-slate-700 text-slate-200"
-          >
-            <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Chat</span>
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={onOpenChat}
+              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-xs px-3 py-1.5 rounded-lg border border-slate-700 text-slate-200"
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Chat</span>
+            </button>
+            <button
+              onClick={onOpenExit}
+              className="flex items-center gap-1.5 bg-red-950 hover:bg-red-900 text-xs px-3 py-1.5 rounded-lg border border-red-700 text-red-300 font-bold"
+              title="Leave Match"
+            >
+              <LogOut className="w-3.5 h-3.5 text-red-400" />
+              <span>Exit</span>
+            </button>
+          </div>
         </div>
 
         {/* Surviving Crewmates Roster */}
@@ -49,4 +60,3 @@ export const SpectatorHUD: React.FC<SpectatorHUDProps> = ({ onOpenChat }) => {
     </div>
   );
 };
-
