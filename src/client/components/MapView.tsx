@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Sparkles,
+  Map as MapIcon,
 } from 'lucide-react';
 
 interface MapViewProps {
@@ -26,6 +27,35 @@ interface MapViewProps {
   onNudgeLocation?: (dLat: number, dLng: number) => void;
 }
 
+type MapTheme = 'dark' | 'streets' | 'satellite' | 'google';
+
+const TILE_PROVIDERS: Record<MapTheme, { name: string; url: string; attribution: string; maxZoom: number }> = {
+  streets: {
+    name: 'OSM Streets',
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 19,
+  },
+  dark: {
+    name: 'Dark Matter',
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; CARTO &copy; OpenStreetMap',
+    maxZoom: 20,
+  },
+  satellite: {
+    name: 'Satellite Aerial',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; Esri World Imagery',
+    maxZoom: 19,
+  },
+  google: {
+    name: 'Google Maps',
+    url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+    attribution: '&copy; Google Maps',
+    maxZoom: 20,
+  },
+};
+
 export const MapView: React.FC<MapViewProps> = ({
   currentLocation,
   currentFloor,
@@ -34,9 +64,10 @@ export const MapView: React.FC<MapViewProps> = ({
   accuracyQuality,
   onNudgeLocation,
 }) => {
-  const { gameState, player, activateRadarPulse, triggerSOS, setActiveModal } = useGame();
+  const { gameState, player, activateRadarPulse, triggerSOS } = useGame();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const activeTileLayerRef = useRef<L.TileLayer | null>(null);
 
   // Layer groups for dynamic rendering
   const boundaryLayerRef = useRef<L.LayerGroup | null>(null);
@@ -47,25 +78,33 @@ export const MapView: React.FC<MapViewProps> = ({
   const selfMarkerRef = useRef<L.Marker | null>(null);
   const accuracyCircleRef = useRef<L.Circle | null>(null);
 
+  const [mapTheme, setMapTheme] = useState<MapTheme>('streets');
+  const [showThemePicker, setShowThemePicker] = useState<boolean>(false);
   const [selectedFloorFilter, setSelectedFloorFilter] = useState<number | 'all'>('all');
   const [showDesktopControls, setShowDesktopControls] = useState<boolean>(false);
 
-  // Initialize Map instance once
+  // Initialize Map instance
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
+    // Use boundary center or current location
+    const initialLat = gameState?.boundary?.center?.lat || currentLocation.lat;
+    const initialLng = gameState?.boundary?.center?.lng || currentLocation.lng;
+
     const map = L.map(mapContainerRef.current, {
-      center: [currentLocation.lat, currentLocation.lng],
+      center: [initialLat, initialLng],
       zoom: 18,
       zoomControl: false,
       attributionControl: false,
     });
 
-    // Dark tactical CartoDB tile layer
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 21,
-      className: 'dark-tiles',
+    // Add initial tile layer
+    const provider = TILE_PROVIDERS[mapTheme];
+    const tileLayer = L.tileLayer(provider.url, {
+      maxZoom: provider.maxZoom,
+      subdomains: 'abcd',
     }).addTo(map);
+    activeTileLayerRef.current = tileLayer;
 
     // Initialize layer groups
     boundaryLayerRef.current = L.layerGroup().addTo(map);
@@ -76,11 +115,41 @@ export const MapView: React.FC<MapViewProps> = ({
 
     mapInstanceRef.current = map;
 
+    // Invalidate size on mount to eliminate blank gray tiles
+    const timer1 = setTimeout(() => map.invalidateSize(), 100);
+    const timer2 = setTimeout(() => map.invalidateSize(), 400);
+    const timer3 = setTimeout(() => map.invalidateSize(), 1000);
+
+    const handleResize = () => map.invalidateSize();
+    window.addEventListener('resize', handleResize);
+
     return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      window.removeEventListener('resize', handleResize);
       map.remove();
       mapInstanceRef.current = null;
     };
   }, []);
+
+  // Switch Tile Layer when theme changes
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    if (activeTileLayerRef.current) {
+      mapInstanceRef.current.removeLayer(activeTileLayerRef.current);
+    }
+
+    const provider = TILE_PROVIDERS[mapTheme];
+    const newTileLayer = L.tileLayer(provider.url, {
+      maxZoom: provider.maxZoom,
+      subdomains: 'abcd',
+    }).addTo(mapInstanceRef.current);
+
+    activeTileLayerRef.current = newTileLayer;
+    mapInstanceRef.current.invalidateSize();
+  }, [mapTheme]);
 
   // Update Boundary
   useEffect(() => {
@@ -96,7 +165,7 @@ export const MapView: React.FC<MapViewProps> = ({
         weight: 3,
         dashArray: '8, 6',
         fillColor: '#10b981',
-        fillOpacity: 0.05,
+        fillOpacity: 0.08,
       }).addTo(boundaryLayerRef.current);
     } else {
       L.circle([b.center.lat, b.center.lng], {
@@ -105,7 +174,7 @@ export const MapView: React.FC<MapViewProps> = ({
         weight: 3,
         dashArray: '8, 6',
         fillColor: '#10b981',
-        fillOpacity: 0.05,
+        fillOpacity: 0.08,
       }).addTo(boundaryLayerRef.current);
     }
   }, [gameState?.boundary]);
@@ -117,7 +186,6 @@ export const MapView: React.FC<MapViewProps> = ({
     redZonesLayerRef.current.clearLayers();
 
     gameState.redZones.forEach((zone) => {
-      // Respect floor filter
       if (
         selectedFloorFilter !== 'all' &&
         zone.floor !== 'all' &&
@@ -131,7 +199,7 @@ export const MapView: React.FC<MapViewProps> = ({
         radius: zone.radius,
         color: zone.severity === 'danger' ? '#ef4444' : '#f59e0b',
         fillColor: zone.severity === 'danger' ? '#dc2626' : '#d97706',
-        fillOpacity: 0.25,
+        fillOpacity: 0.3,
         weight: 2,
         dashArray: '4, 4',
         className: 'red-zone-polygon',
@@ -163,7 +231,7 @@ export const MapView: React.FC<MapViewProps> = ({
       const isDone = player?.completedTasks?.includes(task.id);
       const iconHtml = `
         <div class="flex items-center justify-center w-8 h-8 rounded-full border-2 ${
-          isDone ? 'bg-emerald-600/80 border-emerald-300' : 'bg-amber-600/80 border-amber-300'
+          isDone ? 'bg-emerald-600/90 border-emerald-300' : 'bg-amber-600/90 border-amber-300'
         } shadow-lg text-white font-bold text-xs backdrop-blur-sm">
           ${isDone ? '✓' : '⚡'}
         </div>
@@ -214,9 +282,9 @@ export const MapView: React.FC<MapViewProps> = ({
       accuracyCircleRef.current = L.circle(latlng, {
         radius: gpsAccuracy,
         color: '#06b6d4',
-        weight: 1,
+        weight: 1.5,
         fillColor: '#06b6d4',
-        fillOpacity: 0.1,
+        fillOpacity: 0.12,
       }).addTo(mapInstanceRef.current);
     } else {
       selfMarkerRef.current.setLatLng(latlng);
@@ -238,13 +306,12 @@ export const MapView: React.FC<MapViewProps> = ({
     const isSpectator = player?.status === 'caught' || player?.status === 'spectator';
     const isHunter = player?.role === 'hunter';
 
-    // 1. Render Exact Players (for Host, Spectators, or Hunter allies)
+    // 1. Exact Players (Host, Spectator, Hunter allies)
     if (gameState.players) {
       gameState.players.forEach((p) => {
-        if (p.id === player?.id) return; // Self is handled separately
+        if (p.id === player?.id) return;
         if (!p.location) return;
 
-        // Floor filter check
         if (selectedFloorFilter !== 'all' && p.floor !== undefined && p.floor !== selectedFloorFilter) {
           return;
         }
@@ -277,7 +344,7 @@ export const MapView: React.FC<MapViewProps> = ({
       });
     }
 
-    // 2. Render Blurred Radar Uncertainty Circles for Hunters
+    // 2. Blurred Radar Uncertainty Circles for Hunters
     if (isHunter && gameState.blurredTargets && !isSpectator) {
       gameState.blurredTargets.forEach((target) => {
         if (selectedFloorFilter !== 'all' && target.floor !== selectedFloorFilter) {
@@ -308,13 +375,14 @@ export const MapView: React.FC<MapViewProps> = ({
   const recenterMap = () => {
     if (mapInstanceRef.current) {
       mapInstanceRef.current.setView([currentLocation.lat, currentLocation.lng], 18, { animate: true });
+      mapInstanceRef.current.invalidateSize();
     }
   };
 
   return (
-    <div className="relative w-full h-full overflow-hidden select-none">
+    <div className="relative w-full h-full overflow-hidden select-none bg-slate-950">
       {/* Leaflet Map Canvas */}
-      <div ref={mapContainerRef} className="w-full h-full" />
+      <div ref={mapContainerRef} className="w-full h-full z-10" />
 
       {/* Top Map HUD Bar */}
       <div className="absolute top-3 left-3 right-3 z-[400] flex items-center justify-between pointer-events-none">
@@ -369,7 +437,7 @@ export const MapView: React.FC<MapViewProps> = ({
           }`}
           title="Toggle seeing all floors or current floor only"
         >
-          {selectedFloorFilter === 'all' ? 'All Floors' : `Only F${selectedFloorFilter}`}
+          {selectedFloorFilter === 'all' ? 'All' : `F${selectedFloorFilter}`}
         </button>
       </div>
 
@@ -378,10 +446,19 @@ export const MapView: React.FC<MapViewProps> = ({
         {/* Recenter GPS */}
         <button
           onClick={recenterMap}
-          className="w-11 h-11 bg-slate-900/90 hover:bg-slate-800 active:scale-95 border border-slate-700 rounded-full shadow-xl flex items-center justify-center text-cyan-400 backdrop-blur-md transition"
+          className="w-11 h-11 bg-slate-900/95 hover:bg-slate-800 active:scale-95 border border-slate-700 rounded-full shadow-xl flex items-center justify-center text-cyan-400 backdrop-blur-md transition"
           title="Recenter Map"
         >
           <Crosshair className="w-5 h-5" />
+        </button>
+
+        {/* Map Tile Theme Switcher */}
+        <button
+          onClick={() => setShowThemePicker(!showThemePicker)}
+          className="w-11 h-11 bg-slate-900/95 hover:bg-slate-800 active:scale-95 border border-slate-700 rounded-full shadow-xl flex items-center justify-center text-amber-400 backdrop-blur-md transition"
+          title="Switch Map Layers (OpenStreetMap, Dark, Satellite, Google)"
+        >
+          <Layers className="w-5 h-5" />
         </button>
 
         {/* Hunter Radar Pulse Power-Up */}
@@ -406,12 +483,38 @@ export const MapView: React.FC<MapViewProps> = ({
         {/* Desktop GPS Simulation Controller Toggle */}
         <button
           onClick={() => setShowDesktopControls(!showDesktopControls)}
-          className="w-11 h-11 bg-slate-900/90 hover:bg-slate-800 active:scale-95 border border-slate-700 rounded-full shadow-xl flex items-center justify-center text-slate-300 backdrop-blur-md transition"
+          className="w-11 h-11 bg-slate-900/95 hover:bg-slate-800 active:scale-95 border border-slate-700 rounded-full shadow-xl flex items-center justify-center text-slate-300 backdrop-blur-md transition"
           title="Toggle Simulation Movement D-Pad"
         >
           <Navigation className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Map Theme / Tile Provider Picker Menu */}
+      {showThemePicker && (
+        <div className="absolute bottom-24 right-16 z-[450] bg-slate-900/95 border border-slate-700 p-2 rounded-2xl shadow-2xl backdrop-blur-lg flex flex-col gap-1 min-w-[150px]">
+          <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider px-2 py-1 font-bold">
+            Select Map Style
+          </div>
+          {(Object.keys(TILE_PROVIDERS) as MapTheme[]).map((key) => (
+            <button
+              key={key}
+              onClick={() => {
+                setMapTheme(key);
+                setShowThemePicker(false);
+              }}
+              className={`text-left text-xs px-2.5 py-1.5 rounded-xl font-medium transition flex items-center justify-between ${
+                mapTheme === key
+                  ? 'bg-cyan-600 text-white font-bold'
+                  : 'text-slate-300 hover:bg-slate-800'
+              }`}
+            >
+              <span>{TILE_PROVIDERS[key].name}</span>
+              {mapTheme === key && <span className="text-[10px]">✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Desktop Simulation D-Pad for Testing in Browser */}
       {showDesktopControls && onNudgeLocation && (

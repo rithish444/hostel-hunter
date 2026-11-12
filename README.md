@@ -209,3 +209,4 @@ hunter/
 3. **Audio Proximity Radar**:
    - *Current*: Web Audio API synthesizes heartbeat thumps when hunters are within 15 meters.
    - *Future*: Positional 3D spatial audio (`PannerNode`) indicating left/right hunter direction.
+

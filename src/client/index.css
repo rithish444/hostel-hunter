@@ -14,16 +14,13 @@ html, body, #root {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Leaflet Dark Mode CartoDB Dark Matter / Invert Styling */
+/* Leaflet Map Styling */
 .leaflet-container {
   height: 100%;
   width: 100%;
   background-color: #0a0f1d !important;
   font-family: inherit;
-}
-
-.dark-tiles {
-  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+  z-index: 10;
 }
 
 /* Custom Marker Styling */
@@ -79,3 +76,4 @@ html, body, #root {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(107, 114, 128, 0.8);
 }
+

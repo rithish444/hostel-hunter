@@ -12,6 +12,7 @@ import {
   Check,
   Plus,
   Trash2,
+  LogOut,
 } from 'lucide-react';
 import { RedZone } from '../../shared/types.js';
 
@@ -30,6 +31,7 @@ export const HostControlPanel: React.FC<HostControlPanelProps> = ({ onClose }) =
     addRedZone,
     removeRedZone,
     resolveSOS,
+    leaveRoom,
   } = useGame();
 
   const [activeTab, setActiveTab] = useState<'roster' | 'boundary' | 'redzones' | 'settings'>('roster');
@@ -378,6 +380,37 @@ export const HostControlPanel: React.FC<HostControlPanelProps> = ({ onClose }) =
                   className="w-full accent-amber-500 cursor-pointer"
                 />
               </div>
+
+              {/* Map Provider & API Key Guidance */}
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2 mt-3">
+                <div className="font-bold text-amber-300 flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-amber-400" />
+                  <span>Map Tiles & API Key Configuration</span>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  By default, Hostel Hunt uses high-speed OpenStreetMap and Satellite Aerial tiles (no key needed).
+                  You can also switch map styles using the floating <span className="text-amber-400 font-bold">Layers icon</span> on the map screen.
+                </p>
+                <div className="text-[10px] text-slate-500 font-mono bg-slate-900 p-2 rounded-lg border border-slate-800">
+                  Supported: OSM Standard, Dark Matter, Esri Satellite, Google Maps.
+                </div>
+              </div>
+
+              {/* Danger Zone: Dissolve Room */}
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to completely end and dissolve this room for all players?')) {
+                      onClose();
+                      leaveRoom();
+                    }
+                  }}
+                  className="w-full bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-300 font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 text-xs"
+                >
+                  <LogOut className="w-4 h-4 text-red-400" />
+                  <span>End & Dissolve Match Room</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -385,3 +418,4 @@ export const HostControlPanel: React.FC<HostControlPanelProps> = ({ onClose }) =
     </div>
   );
 };
+

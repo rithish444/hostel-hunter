@@ -12,6 +12,7 @@ import {
   UserX,
   Crosshair,
   Sparkles,
+  LogOut,
 } from 'lucide-react';
 
 interface LobbyViewProps {
@@ -25,7 +26,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   onOpenLeaderboard,
   onOpenHostSettings,
 }) => {
-  const { gameState, player, roomCode, startGame, addBots, kickPlayer } = useGame();
+  const { gameState, player, roomCode, startGame, addBots, kickPlayer, leaveRoom } = useGame();
   const [copied, setCopied] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
 
@@ -45,6 +46,15 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
     setIsStarting(true);
     await startGame();
     setIsStarting(false);
+  };
+
+  const handleExitRoom = () => {
+    const confirmMessage = isHost
+      ? 'Are you sure you want to close and dissolve this room for all players?'
+      : 'Are you sure you want to leave this room?';
+    if (window.confirm(confirmMessage)) {
+      leaveRoom();
+    }
   };
 
   return (
@@ -84,6 +94,15 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             >
               <Trophy className="w-3.5 h-3.5 text-amber-400" />
               <span>Rankings</span>
+            </button>
+
+            <button
+              onClick={handleExitRoom}
+              className="flex items-center gap-1 bg-red-950/80 hover:bg-red-900 text-red-300 text-xs px-2.5 py-1.5 rounded-xl border border-red-800/80 transition"
+              title={isHost ? 'Close and dissolve room' : 'Leave room'}
+            >
+              <LogOut className="w-3.5 h-3.5 text-red-400" />
+              <span>{isHost ? 'Close Room' : 'Leave'}</span>
             </button>
           </div>
         </div>
@@ -210,7 +229,18 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             </div>
           </div>
         )}
+
+        <div className="flex justify-center pt-2.5">
+          <button
+            onClick={handleExitRoom}
+            className="text-xs text-slate-500 hover:text-red-400 font-mono transition flex items-center gap-1.5 py-1.5 px-3 rounded-xl hover:bg-slate-900 border border-transparent hover:border-slate-800"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>{isHost ? 'Close and Dissolve Room' : 'Leave Match Room'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );
 };
+

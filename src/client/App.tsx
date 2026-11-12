@@ -16,7 +16,7 @@ import { EmergencyMeetingModal } from './components/EmergencyMeetingModal.js';
 import { HowToPlayModal } from './components/HowToPlayModal.js';
 import { LeaderboardModal } from './components/LeaderboardModal.js';
 import { ResultsView } from './components/ResultsView.js';
-import { Radio, Clock, ShieldAlert, Crosshair, Users, MessageSquare, Settings } from 'lucide-react';
+import { Radio, Clock, ShieldAlert, Crosshair, Users, MessageSquare, Settings, LogOut } from 'lucide-react';
 
 export const AppContent: React.FC = () => {
   const {
@@ -26,6 +26,8 @@ export const AppContent: React.FC = () => {
     reportLocation,
     catchPlayer,
     leaveRoom,
+    skipHidingPhase,
+    callEmergencyMeeting,
   } = useGame();
 
   // Active modals
@@ -37,6 +39,7 @@ export const AppContent: React.FC = () => {
   const [showTasks, setShowTasks] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [catchNotification, setCatchNotification] = useState<string | null>(null);
+  const [hunterViewingMap, setHunterViewingMap] = useState<boolean>(false);
 
   // High-accuracy Geolocation watcher
   const {
@@ -94,11 +97,11 @@ export const AppContent: React.FC = () => {
     );
   }
 
-  // 3. Hiding Phase for Hunters: Hunter Blinded & on Standby Countdown
-  if (gameState.phase === 'hiding' && player.role === 'hunter') {
+  // 3. Hiding Phase for Hunters: Hunter Blinded & on Standby Countdown (with map preview & skip options)
+  if (gameState.phase === 'hiding' && player.role === 'hunter' && !hunterViewingMap) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 p-6 text-center select-none safe-top safe-bottom">
-        <div className="max-w-md w-full space-y-6">
+        <div className="max-w-md w-full space-y-5">
           <div className="relative mx-auto w-24 h-24 rounded-full bg-red-950 border-4 border-red-500/80 flex items-center justify-center shadow-2xl shadow-red-950/80">
             <Radio className="w-12 h-12 text-red-400 animate-spin" />
           </div>
@@ -111,28 +114,48 @@ export const AppContent: React.FC = () => {
               Hiding Phase In Progress
             </h2>
             <p className="text-xs text-slate-400 leading-relaxed max-w-xs mx-auto">
-              Hunters are radar-blinded while crewmates scatter and take cover. Prepare your squad!
+              Crewmates are scattering and taking cover. Hunters release when timer reaches zero!
             </p>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl flex items-center justify-center gap-3">
+          <div className="bg-slate-900 border border-slate-800 p-4 rounded-3xl flex items-center justify-center gap-3">
             <Clock className="w-8 h-8 text-amber-400" />
             <div className="text-4xl font-black font-mono text-amber-400">
               {gameState.remainingSeconds}s
             </div>
           </div>
 
-          <div className="flex justify-center gap-3 pt-2">
+          {/* Quick action buttons */}
+          <div className="flex flex-col gap-2 pt-1">
+            <button
+              onClick={() => setHunterViewingMap(true)}
+              className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-2xl shadow-lg transition flex items-center justify-center gap-2 text-xs"
+            >
+              <Crosshair className="w-4 h-4" />
+              <span>Open Tactical Map Now</span>
+            </button>
+
+            {player.isHost && (
+              <button
+                onClick={() => skipHidingPhase()}
+                className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 rounded-2xl shadow-lg transition flex items-center justify-center gap-2 text-xs"
+              >
+                <span>⚡ Skip Countdown & Start Hunt</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex justify-center gap-3 pt-1">
             <button
               onClick={() => setShowChat(true)}
-              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-xs px-4 py-2.5 rounded-xl border border-slate-700 text-slate-200"
+              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-xs px-4 py-2 rounded-xl border border-slate-700 text-slate-200"
             >
               <MessageSquare className="w-4 h-4 text-cyan-400" />
               <span>Squad Radio</span>
             </button>
             <button
               onClick={() => setShowHowToPlay(true)}
-              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-xs px-4 py-2.5 rounded-xl border border-slate-700 text-slate-200"
+              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-xs px-4 py-2 rounded-xl border border-slate-700 text-slate-200"
             >
               <span>Field Manual</span>
             </button>
@@ -197,6 +220,21 @@ export const AppContent: React.FC = () => {
               <Settings className="w-4 h-4" />
             </button>
           )}
+
+          <button
+            onClick={() => {
+              const msg = player.isHost
+                ? 'Are you sure you want to close and dissolve the room for all players?'
+                : 'Are you sure you want to leave this match?';
+              if (window.confirm(msg)) {
+                leaveRoom();
+              }
+            }}
+            className="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-red-400 transition"
+            title={player.isHost ? 'Close Room' : 'Leave Match'}
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -230,8 +268,8 @@ export const AppContent: React.FC = () => {
           ) : (
             <CrewmateHUD
               onShowQR={() => setShowQRDisplay(true)}
-              onOpenTasks={() => setShowTasks(true)}
-              onOpenMeeting={() => gameState.phase === 'hunting' && (useGame as any)}
+              onOpenMeeting={() => callEmergencyMeeting()}
+              onOpenChat={() => setShowChat(true)}
             />
           )}
         </>
@@ -289,3 +327,4 @@ export const App: React.FC = () => {
 };
 
 export default App;
+

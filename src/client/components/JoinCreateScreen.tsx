@@ -244,3 +244,4 @@ export const JoinCreateScreen: React.FC<JoinCreateScreenProps> = ({
     </div>
   );
 };
+

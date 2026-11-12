@@ -109,6 +109,15 @@ export function registerSocketHandlers(io: Server, gameManager: GameManager): vo
       }
     });
 
+    // Skip hiding phase (instant hunt start)
+    socket.on('SKIP_HIDING_PHASE', (data: { roomCode: string; hostId: string }, callback) => {
+      const success = gameManager.skipHidingPhase(data.roomCode, data.hostId);
+      callback?.({ success });
+      if (success) {
+        broadcastRoomStates(data.roomCode);
+      }
+    });
+
     // Catch player
     socket.on('CATCH_PLAYER', (data: { roomCode: string; hunterId: string; method: 'qr' | 'proximity_tag'; qrToken?: string; targetPlayerId?: string }, callback) => {
       const result = gameManager.catchPlayer(
@@ -231,6 +240,17 @@ export function registerSocketHandlers(io: Server, gameManager: GameManager): vo
       }
     });
 
+    // Leave / Close Room
+    socket.on('LEAVE_ROOM', (data: { roomCode: string; playerId: string }, callback) => {
+      const result = gameManager.leaveOrCloseRoom(data.roomCode, data.playerId);
+      socket.leave(data.roomCode);
+      socketMap.set(socket.id, {});
+      callback?.(result);
+      if (!result.isHostClosed) {
+        broadcastRoomStates(data.roomCode);
+      }
+    });
+
     // Disconnect handling
     socket.on('disconnect', () => {
       const session = socketMap.get(socket.id);
@@ -251,3 +271,4 @@ export function registerSocketHandlers(io: Server, gameManager: GameManager): vo
     });
   });
 }
+

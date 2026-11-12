@@ -76,33 +76,39 @@ describe('Win Conditions & Game Cycle Logic', () => {
     expect(room.winReason).toContain('survived');
   });
 
-  it('triggers crewmate win when all hostel tasks are finished', () => {
+  it('triggers crewmate win when time expires and at least one survivor remains', () => {
     const storage = new GameStorage();
     const gm = new GameManager(storage, {
       onStateChange: () => {},
       onBroadcastEvent: () => {},
     });
 
-    const { room, hostPlayer } = gm.createRoom('Host', 'Task Room', {
-      durationMinutes: 10,
+    const { room, hostPlayer } = gm.createRoom('Host', 'Survival Match', {
+      durationMinutes: 5,
       hidingTimeSeconds: 1,
       hunterCount: 1,
-      allowTaskWin: true,
+      allowTaskWin: false,
     });
 
-    gm.joinRoom(room.roomCode, 'Worker Bee');
+    gm.joinRoom(room.roomCode, 'Crewmate A');
+    gm.joinRoom(room.roomCode, 'Crewmate B');
     gm.startGame(room.roomCode, hostPlayer.id);
     room.phase = 'hunting';
 
-    const crewmate = Object.values(room.players).find((p) => p.role === 'crewmate')!;
+    const hunter = Object.values(room.players).find((p) => p.role === 'hunter')!;
+    const crewmates = Object.values(room.players).filter((p) => p.role === 'crewmate');
 
-    // Complete all tasks
-    for (const task of room.tasks) {
-      gm.completeTask(room.roomCode, crewmate.id, task.id, task.code);
-    }
+    // Hunter catches 1 crewmate, but 1 still remains hidden
+    gm.catchPlayer(room.roomCode, hunter.id, 'qr', crewmates[0].qrCatchToken);
+    expect(crewmates[0].status).toBe('caught');
+
+    // Time expires
+    room.phaseEndTime = Date.now() - 1000;
+    (gm as any).tickRoom(room.roomCode);
 
     expect(room.phase).toBe('ended');
     expect(room.winner).toBe('crewmates');
-    expect(room.winReason).toContain('All tasks completed');
+    expect(room.winReason).toContain('survived');
   });
 });
+

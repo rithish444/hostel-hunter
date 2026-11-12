@@ -68,3 +68,4 @@ export const QRCodeDisplayModal: React.FC<QRCodeDisplayModalProps> = ({
     </div>
   );
 };
+

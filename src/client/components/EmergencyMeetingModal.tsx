@@ -43,3 +43,4 @@ export const EmergencyMeetingModal: React.FC<EmergencyMeetingModalProps> = ({ on
     </div>
   );
 };
+

@@ -140,3 +140,4 @@ describe('Catch Mechanism & Anti-Cheat Validation', () => {
     expect(result.reason).toContain('Hunt Phase');
   });
 });
+

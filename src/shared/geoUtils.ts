@@ -181,3 +181,4 @@ export class GpsCoordinateSmoother {
     this.current = null;
   }
 }
+

@@ -65,9 +65,9 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ onPlayAgain }) => {
             <div className="font-bold text-red-400">{gameState.stats.catches.length}</div>
           </div>
           <div className="space-y-0.5">
-            <span className="text-[10px] text-slate-500 uppercase">Tasks Done</span>
+            <span className="text-[10px] text-slate-500 uppercase">Survivors</span>
             <div className="font-bold text-emerald-400">
-              {gameState.stats.tasksCompleted}/{gameState.stats.totalTasks}
+              {Math.max(0, gameState.stats.totalCrewmates - gameState.stats.caughtCrewmates)}/{gameState.stats.totalCrewmates}
             </div>
           </div>
         </div>
@@ -112,3 +112,4 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ onPlayAgain }) => {
     </div>
   );
 };
+

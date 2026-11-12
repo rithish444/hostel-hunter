@@ -189,3 +189,4 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ onClose }) => {
     </div>
   );
 };
+

@@ -152,3 +152,4 @@ describe('Geofence & Boundary Calculations', () => {
     expect(player.boundaryViolationStart).toBeNull();
   });
 });
+

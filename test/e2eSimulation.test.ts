@@ -23,7 +23,7 @@ describe('End-to-End Simulation & Game Lifecycle', () => {
       proximityWarningMeters: 15,
       blurRadiusMeters: 30,
       gracePeriodSeconds: 15,
-      allowTaskWin: true,
+      allowTaskWin: false,
     });
 
     expect(room.roomCode).toBeDefined();

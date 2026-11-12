@@ -30,6 +30,7 @@ interface GameContextType {
   createRoom: (hostName: string, gameName?: string, settings?: Partial<GameSettings>, boundary?: Partial<BoundarySettings>) => Promise<boolean>;
   joinRoom: (roomCode: string, playerName: string, avatar?: string) => Promise<boolean>;
   startGame: () => Promise<boolean>;
+  skipHidingPhase: () => Promise<boolean>;
   reportLocation: (location: LatLngWithFloor) => void;
   catchPlayer: (method: 'qr' | 'proximity_tag', qrToken?: string, targetPlayerId?: string) => Promise<{ success: boolean; caughtPlayerName?: string; error?: string }>;
   activateRadarPulse: () => Promise<boolean>;
@@ -160,6 +161,14 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       vibrations.vibrateTap();
     });
 
+    s.on('ROOM_CLOSED', (data: { reason?: string }) => {
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+      setRoomCode(null);
+      setPlayer(null);
+      setGameState(null);
+      setError(data?.reason || 'Room was closed by the host.');
+    });
+
     setSocket(s);
 
     return () => {
@@ -259,6 +268,15 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setError(res.error || 'Failed to start game.');
           resolve(false);
         }
+      });
+    });
+  }, [socket, roomCode, player]);
+
+  const skipHidingPhase = useCallback(async (): Promise<boolean> => {
+    if (!socket || !roomCode || !player) return false;
+    return new Promise((resolve) => {
+      socket.emit('SKIP_HIDING_PHASE', { roomCode, hostId: player.id }, (res: any) => {
+        resolve(res.success);
       });
     });
   }, [socket, roomCode, player]);
@@ -422,11 +440,14 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [socket, roomCode, player]);
 
   const leaveRoom = useCallback(() => {
+    if (socket && roomCode && player) {
+      socket.emit('LEAVE_ROOM', { roomCode, playerId: player.id });
+    }
     localStorage.removeItem(SESSION_STORAGE_KEY);
     setRoomCode(null);
     setPlayer(null);
     setGameState(null);
-  }, []);
+  }, [socket, roomCode, player]);
 
   const clearError = useCallback(() => setError(null), []);
 
@@ -444,6 +465,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createRoom,
         joinRoom,
         startGame,
+        skipHidingPhase,
         reportLocation,
         catchPlayer,
         activateRadarPulse,
@@ -474,3 +496,4 @@ export const useGame = () => {
   }
   return context;
 };
+

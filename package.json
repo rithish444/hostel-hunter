@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "tsx watch src/server/index.ts",
+    "dev:server": "node --import tsx --watch src/server/index.ts",
     "dev:client": "vite",
     "build": "tsc -b && vite build",
-    "start": "NODE_ENV=production tsx src/server/index.ts",
+    "start": "node --import tsx src/server/index.ts",
     "test": "vitest run",
     "postinstall": "node scripts/patch-rollup.js"
   },

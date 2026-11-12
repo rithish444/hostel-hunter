@@ -235,27 +235,8 @@ export class BotSimulationEngine {
         state.targetWaypoint = potentialTarget;
       }
     } else {
-      // Relaxed patrol or task completion
-      state.speedMps = 1.2;
-      const tasks = this.room.tasks;
-      if (tasks.length > 0) {
-        const currentTask = tasks[state.taskTargetIndex % tasks.length];
-        if (currentTask && !crewmate.completedTasks.includes(currentTask.id)) {
-          state.targetWaypoint = {
-            ...currentTask.location,
-            floor: currentTask.floor,
-            timestamp: Date.now(),
-          };
-
-          const distToTask = calculateDistanceMeters(crewmate.location, currentTask.location);
-          if (distToTask < 5 && crewmate.location.floor === currentTask.floor) {
-            // Complete task!
-            this.onTaskCompleted(crewmate.id, currentTask.id);
-            state.taskTargetIndex++;
-          }
-        }
-      }
-
+      // Relaxed stealth movement: patrol rooms & stay hidden
+      state.speedMps = 1.0;
       if (calculateDistanceMeters(crewmate.location, state.targetWaypoint) < 3) {
         state.targetWaypoint = this.generateRandomWaypoint(crewmate.location.floor);
       }
@@ -318,3 +299,4 @@ export class BotSimulationEngine {
     };
   }
 }
+

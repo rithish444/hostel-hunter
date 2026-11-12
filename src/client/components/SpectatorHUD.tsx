@@ -49,3 +49,4 @@ export const SpectatorHUD: React.FC<SpectatorHUDProps> = ({ onOpenChat }) => {
     </div>
   );
 };
+

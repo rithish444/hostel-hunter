@@ -116,3 +116,4 @@ export const HunterHUD: React.FC<HunterHUDProps> = ({ onOpenScanner, onOpenChat 
     </div>
   );
 };
+

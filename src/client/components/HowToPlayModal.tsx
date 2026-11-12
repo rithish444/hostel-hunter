@@ -92,7 +92,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ onClose }) => {
               <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-1">
                 <span className="font-bold text-red-400">3. Hunt Phase (10 mins)</span>
                 <p className="text-slate-400 text-[11px]">
-                  Hunters release! Hunters win by catching all crewmates. Crewmates win if at least 1 survives until time expires OR if all hostel tasks are solved!
+                  Hunters release! Hunters win by catching all crewmates. Crewmates win if at least 1 person survives until the timer expires! Pure survival stealth.
                 </p>
               </div>
             </div>
@@ -122,7 +122,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ onClose }) => {
                   <li>Sees only themselves, perimeter boundary, and restricted red zones.</li>
                   <li>Proximity Alert: Heartbeat audio & vibration trigger when a hunter is within 15 meters!</li>
                   <li>Tap "Show My ID" when cornered for hunter to scan.</li>
-                  <li>Solve electrical and hostel tasks across floors to win early!</li>
+                  <li>Pure Stealth Survival: Evade hunters and survive until the timer expires!</li>
                 </ul>
               </div>
             </div>
@@ -174,3 +174,4 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ onClose }) => {
     </div>
   );
 };
+

@@ -94,3 +94,4 @@ export function validateCatch(
 
   return { valid: false, reason: 'Unsupported catch method.' };
 }
+

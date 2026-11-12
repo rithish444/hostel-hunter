@@ -197,3 +197,4 @@ export interface ClientPlayerSummary {
   location?: LatLngWithFloor | null; // Only exposed to host or teammates if applicable
   floor?: number;
 }
+

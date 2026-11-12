@@ -126,3 +126,4 @@ Testing hide-and-seek with 12 real people walking across 4 floors during develop
 - Fast, zero external database dependency (no MongoDB or Postgres setup needed).
 - Persistent across server reboots.
 - Exposes clean REST endpoints (`/api/matches`, `/api/leaderboard`).
+

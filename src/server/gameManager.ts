@@ -215,6 +215,33 @@ export class GameManager {
     return true;
   }
 
+  public leaveOrCloseRoom(roomCode: string, playerId: string): { success: boolean; isHostClosed: boolean } {
+    const room = this.getRoom(roomCode);
+    if (!room) return { success: false, isHostClosed: false };
+
+    if (room.hostId === playerId) {
+      // Host is closing and dissolving the room
+      if (this.roomTimers.has(roomCode)) {
+        clearInterval(this.roomTimers.get(roomCode)!);
+        this.roomTimers.delete(roomCode);
+      }
+      const engine = this.botEngines.get(roomCode);
+      if (engine) engine.stop();
+      this.botEngines.delete(roomCode);
+      this.rooms.delete(roomCode);
+
+      this.onBroadcastEvent(roomCode, 'ROOM_CLOSED', {
+        reason: 'The host has closed and dissolved the room.',
+      });
+      return { success: true, isHostClosed: true };
+    } else {
+      // Normal player leaving
+      delete room.players[playerId];
+      this.onStateChange(roomCode);
+      return { success: true, isHostClosed: false };
+    }
+  }
+
   public updateSettings(roomCode: string, hostId: string, updates: Partial<GameSettings>): boolean {
     const room = this.getRoom(roomCode);
     if (!room || room.hostId !== hostId || room.phase !== 'lobby') return false;
@@ -282,6 +309,18 @@ export class GameManager {
     });
 
     return { success: true };
+  }
+
+  public skipHidingPhase(roomCode: string, hostId: string): boolean {
+    const room = this.getRoom(roomCode);
+    if (!room || room.hostId !== hostId || room.phase !== 'hiding') return false;
+    room.phase = 'hunting';
+    room.phaseEndTime = Date.now() + room.settings.durationMinutes * 60 * 1000;
+    this.onBroadcastEvent(roomCode, 'HUNT_STARTED', {
+      durationMinutes: room.settings.durationMinutes,
+    });
+    this.onStateChange(roomCode);
+    return true;
   }
 
   private startRoomTimer(roomCode: string): void {
@@ -865,3 +904,4 @@ export class GameManager {
     };
   }
 }
+

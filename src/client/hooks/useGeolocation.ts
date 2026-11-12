@@ -145,3 +145,4 @@ export function useGeolocation({
     setIsUsingSimulatedLocation,
   };
 }
+

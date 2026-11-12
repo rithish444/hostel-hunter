@@ -1,17 +1,17 @@
 import React from 'react';
 import { useGame } from '../context/GameContext.js';
-import { QrCode, Heart, CheckSquare, Bell, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { QrCode, Heart, Bell, AlertTriangle, ShieldCheck, MessageSquare } from 'lucide-react';
 
 interface CrewmateHUDProps {
   onShowQR: () => void;
-  onOpenTasks: () => void;
   onOpenMeeting: () => void;
+  onOpenChat: () => void;
 }
 
 export const CrewmateHUD: React.FC<CrewmateHUDProps> = ({
   onShowQR,
-  onOpenTasks,
   onOpenMeeting,
+  onOpenChat,
 }) => {
   const { gameState, player } = useGame();
 
@@ -19,8 +19,6 @@ export const CrewmateHUD: React.FC<CrewmateHUDProps> = ({
 
   const isProximityActive = gameState.proximityAlert?.active;
   const isOutside = !player.isInsideBoundary;
-  const completedCount = player.completedTasks?.length || 0;
-  const totalTasks = gameState.tasks?.length || 0;
 
   return (
     <>
@@ -38,7 +36,7 @@ export const CrewmateHUD: React.FC<CrewmateHUDProps> = ({
                   ⚠️ HUNTER DETECTED NEARBY!
                 </div>
                 <div className="text-[10px] text-red-300 font-mono">
-                  Distance: ~{gameState.proximityAlert.distanceEstimated || 12}m • Hide or Run!
+                  Distance: ~{gameState.proximityAlert.distanceEstimated || 12}m • Stay Quiet & Hidden!
                 </div>
               </div>
             </div>
@@ -57,7 +55,7 @@ export const CrewmateHUD: React.FC<CrewmateHUDProps> = ({
                   OUT OF BOUNDS!
                 </div>
                 <div className="text-[10px] text-amber-300">
-                  Return to perimeter immediately before penalty flag!
+                  Return to hostel perimeter immediately!
                 </div>
               </div>
             </div>
@@ -72,15 +70,11 @@ export const CrewmateHUD: React.FC<CrewmateHUDProps> = ({
           <div className="flex items-center justify-between text-xs font-mono">
             <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
               <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-              CREWMATE EVASION ACTIVE
+              CREWMATE EVASION
             </div>
-            <div className="flex items-center gap-2 text-slate-300">
-              <span>
-                Tasks:{' '}
-                <b className="text-emerald-400 font-bold">
-                  {completedCount}/{totalTasks}
-                </b>
-              </span>
+            <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>SURVIVE UNTIL TIMEOUT</span>
             </div>
           </div>
 
@@ -95,20 +89,6 @@ export const CrewmateHUD: React.FC<CrewmateHUDProps> = ({
               <span className="text-[11px] font-bold tracking-tight">SHOW MY ID</span>
             </button>
 
-            {/* Hostel Tasks */}
-            <button
-              onClick={onOpenTasks}
-              className="flex flex-col items-center justify-center gap-1 py-2.5 px-2 bg-gradient-to-b from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 active:scale-95 text-white rounded-xl shadow-lg shadow-emerald-950/80 border border-emerald-400 transition"
-            >
-              <div className="relative">
-                <CheckSquare className="w-5 h-5 text-emerald-100" />
-                <span className="absolute -top-1 -right-2 bg-black text-emerald-300 text-[9px] font-bold font-mono px-1 rounded-full border border-emerald-400">
-                  {totalTasks - completedCount}
-                </span>
-              </div>
-              <span className="text-[11px] font-bold tracking-tight">TASKS</span>
-            </button>
-
             {/* Emergency Meeting */}
             <button
               onClick={onOpenMeeting}
@@ -121,6 +101,15 @@ export const CrewmateHUD: React.FC<CrewmateHUDProps> = ({
             >
               <Bell className="w-5 h-5 text-amber-200" />
               <span className="text-[11px] font-bold tracking-tight">MEETING</span>
+            </button>
+
+            {/* Tactical Chat */}
+            <button
+              onClick={onOpenChat}
+              className="flex flex-col items-center justify-center gap-1 py-2.5 px-2 bg-slate-900 hover:bg-slate-800 active:scale-95 text-slate-200 border border-slate-700 rounded-xl shadow-lg transition"
+            >
+              <MessageSquare className="w-5 h-5 text-cyan-400" />
+              <span className="text-[11px] font-bold tracking-tight">CHAT</span>
             </button>
           </div>
         </div>
