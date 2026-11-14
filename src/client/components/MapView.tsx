@@ -24,7 +24,12 @@ interface MapViewProps {
   onFloorChange: (floor: number) => void;
   gpsAccuracy: number;
   accuracyQuality: 'high' | 'medium' | 'low';
+  gpsError?: string | null;
+  hasRealGpsFix?: boolean;
   onNudgeLocation?: (dLat: number, dLng: number) => void;
+  onSetExactLocation?: (coords: { lat: number; lng: number }) => void;
+  onResumeRealGps?: () => void;
+  isCalibrated?: boolean;
 }
 
 type MapTheme = 'streets' | 'satellite';
@@ -63,7 +68,12 @@ export const MapView: React.FC<MapViewProps> = ({
   onFloorChange,
   gpsAccuracy,
   accuracyQuality,
+  gpsError,
+  hasRealGpsFix,
   onNudgeLocation,
+  onSetExactLocation,
+  onResumeRealGps,
+  isCalibrated,
 }) => {
   const { gameState, player, activateRadarPulse, triggerSOS } = useGame();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -82,6 +92,7 @@ export const MapView: React.FC<MapViewProps> = ({
   const [mapTheme, setMapTheme] = useState<MapTheme>('streets');
   const [selectedFloorFilter, setSelectedFloorFilter] = useState<number | 'all'>('all');
   const [showDesktopControls, setShowDesktopControls] = useState<boolean>(false);
+  const [isPinpointMode, setIsPinpointMode] = useState<boolean>(false);
   const hasAutoCenteredRef = useRef(false);
 
   // Initialize Map instance
@@ -388,6 +399,24 @@ export const MapView: React.FC<MapViewProps> = ({
     }
   }, [currentLocation, accuracyQuality]);
 
+  // Handle tap-to-pinpoint room in building
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    const map = mapInstanceRef.current;
+
+    const onMapClick = (e: L.LeafletMouseEvent) => {
+      if (isPinpointMode && onSetExactLocation) {
+        onSetExactLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
+        setIsPinpointMode(false);
+      }
+    };
+
+    map.on('click', onMapClick);
+    return () => {
+      map.off('click', onMapClick);
+    };
+  }, [isPinpointMode, onSetExactLocation]);
+
   const recenterMap = () => {
     if (mapInstanceRef.current) {
       const targetLat = currentLocation?.lat || gameState?.boundary?.center?.lat || 11.1005;
@@ -408,7 +437,9 @@ export const MapView: React.FC<MapViewProps> = ({
         <div className="flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 px-3 py-1.5 rounded-full shadow-lg backdrop-blur-md pointer-events-auto">
           <div
             className={`w-2.5 h-2.5 rounded-full animate-pulse ${
-              accuracyQuality === 'high'
+              isCalibrated
+                ? 'bg-cyan-400'
+                : accuracyQuality === 'high'
                 ? 'bg-emerald-400'
                 : accuracyQuality === 'medium'
                 ? 'bg-amber-400'
@@ -416,7 +447,11 @@ export const MapView: React.FC<MapViewProps> = ({
             }`}
           />
           <span className="text-xs font-mono font-medium text-slate-200">
-            GPS ±{Math.round(gpsAccuracy)}m • F{currentFloor}
+            {isCalibrated
+              ? `📍 Room Calibrated • F${currentFloor}`
+              : hasRealGpsFix
+              ? `GPS ±${Math.round(gpsAccuracy)}m • F${currentFloor}`
+              : `🔍 Finding GPS... • F${currentFloor}`}
           </span>
         </div>
 
@@ -430,6 +465,31 @@ export const MapView: React.FC<MapViewProps> = ({
           <span>SOS</span>
         </button>
       </div>
+
+      {/* Location Permission / Error Alert Banner */}
+      {gpsError && (
+        <div className="absolute top-16 left-3 right-3 z-[450] bg-red-950/95 border-2 border-red-500 p-2.5 rounded-2xl shadow-2xl backdrop-blur-md flex items-center justify-between text-xs text-red-200 pointer-events-auto">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
+            <span className="leading-tight font-medium">{gpsError}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Pinpoint Room Active Guidance Banner */}
+      {isPinpointMode && (
+        <div className="absolute top-16 left-3 right-3 z-[450] bg-cyan-950/95 border-2 border-cyan-400 p-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center justify-between pointer-events-auto animate-pulse">
+          <div className="text-xs text-cyan-200">
+            <span className="font-bold">📍 TAP TO SET ROOM:</span> Tap your exact room or window on the building map!
+          </div>
+          <button
+            onClick={() => setIsPinpointMode(false)}
+            className="bg-cyan-800 hover:bg-cyan-700 text-white font-bold text-xs px-2.5 py-1 rounded-lg border border-cyan-400 ml-2"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
 
       {/* Floating Floor Selector Pill Bar */}
       <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[400] bg-slate-900/90 border border-slate-700/80 px-2 py-1 rounded-full shadow-xl backdrop-blur-md flex items-center gap-1">
@@ -485,6 +545,30 @@ export const MapView: React.FC<MapViewProps> = ({
           <Layers className="w-4 h-4" />
           <span className="text-[8px] font-mono font-black uppercase tracking-tight mt-0.5">
             {mapTheme === 'streets' ? 'MAP' : 'SAT'}
+          </span>
+        </button>
+
+        {/* Pinpoint / Calibrate Exact Room Spot */}
+        <button
+          onClick={() => {
+            if (isCalibrated) {
+              onResumeRealGps?.();
+            } else {
+              setIsPinpointMode(!isPinpointMode);
+            }
+          }}
+          className={`relative w-11 h-11 rounded-full shadow-xl flex flex-col items-center justify-center border backdrop-blur-md transition active:scale-95 ${
+            isPinpointMode
+              ? 'bg-cyan-600 border-cyan-300 text-white animate-pulse'
+              : isCalibrated
+              ? 'bg-emerald-950/90 border-emerald-500 text-emerald-300'
+              : 'bg-slate-900/95 border-slate-700 text-slate-300 hover:bg-slate-800'
+          }`}
+          title={isCalibrated ? 'Using Pinpointed Room Location. Tap to resume phone GPS' : 'Tap to pinpoint your exact room spot in the building'}
+        >
+          <Crosshair className="w-4 h-4" />
+          <span className="text-[7px] font-mono font-black uppercase tracking-tight mt-0.5">
+            {isPinpointMode ? 'AIM' : isCalibrated ? 'LIVE' : 'ROOM'}
           </span>
         </button>
 

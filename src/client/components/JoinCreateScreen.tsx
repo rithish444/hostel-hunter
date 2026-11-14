@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGame } from '../context/GameContext.js';
-import { Crosshair, Shield, Users, HelpCircle, Trophy, ArrowRight, Sparkles } from 'lucide-react';
+import { Crosshair, Shield, Users, HelpCircle, Trophy, ArrowRight, Sparkles, MapPin } from 'lucide-react';
 
 const AVATARS = ['🦊', '🐺', '🐱', '🦁', '🐯', '🦅', '🐻', '🐼', '🐨', '🤖', '👻', '🥷'];
 
@@ -22,6 +22,34 @@ export const JoinCreateScreen: React.FC<JoinCreateScreenProps> = ({
   const [gameName, setGameName] = useState("SREC Men's Hostel 2");
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
   const [loading, setLoading] = useState(false);
+  const [detectedCoords, setDetectedCoords] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
+  const [gpsStatusText, setGpsStatusText] = useState<string>('Detecting building GPS...');
+
+  // Auto-acquire real GPS as early as possible
+  useEffect(() => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setGpsStatusText("SREC Men's Hostel 2 (Coimbatore)");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = Number(pos.coords.latitude.toFixed(6));
+        const lng = Number(pos.coords.longitude.toFixed(6));
+        const acc = Math.round(pos.coords.accuracy || 10);
+        setDetectedCoords({ lat, lng, accuracy: acc });
+        setGpsStatusText(`📍 Exact GPS Fix: ±${acc}m accuracy`);
+      },
+      () => {
+        setGpsStatusText("SREC Men's Hostel 2 (Default: 11.1005, 76.9683)");
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 30000,
+      }
+    );
+  }, []);
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,14 +68,14 @@ export const JoinCreateScreen: React.FC<JoinCreateScreenProps> = ({
     setLoading(true);
     clearError();
 
-    let hostCenter = { lat: 11.1005, lng: 76.9683 };
-    if (typeof window !== 'undefined' && navigator.geolocation) {
+    let hostCenter = detectedCoords ? { lat: detectedCoords.lat, lng: detectedCoords.lng } : { lat: 11.1005, lng: 76.9683 };
+    if (!detectedCoords && typeof window !== 'undefined' && navigator.geolocation) {
       try {
         const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: true,
-            timeout: 3000,
-            maximumAge: 10000,
+            timeout: 6000,
+            maximumAge: 30000,
           });
         });
         if (pos.coords.latitude && pos.coords.longitude) {
@@ -57,7 +85,6 @@ export const JoinCreateScreen: React.FC<JoinCreateScreenProps> = ({
           };
         }
       } catch {
-        // Fallback directly to SREC Men's Hostel 2
         hostCenter = { lat: 11.1005, lng: 76.9683 };
       }
     }
@@ -240,6 +267,26 @@ export const JoinCreateScreen: React.FC<JoinCreateScreenProps> = ({
                     {av}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* GPS Location Status Box */}
+            <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-300 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Arena Coordinates:</span>
+                </span>
+                <span className="font-mono text-[11px] font-bold text-cyan-400">
+                  {detectedCoords ? `±${detectedCoords.accuracy}m GPS Fix` : 'SREC Hostel 2'}
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-400 leading-relaxed">
+                {detectedCoords ? (
+                  <span>Using your real phone GPS inside the building.</span>
+                ) : (
+                  <span>Centered at Sri Ramakrishna Engineering College, Men's Hostel 2 (11.1005, 76.9683).</span>
+                )}
               </div>
             </div>
 

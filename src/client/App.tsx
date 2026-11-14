@@ -49,8 +49,13 @@ export const AppContent: React.FC = () => {
     currentFloor,
     gpsAccuracy,
     accuracyQuality,
+    gpsError,
+    hasRealGpsFix,
     setFloor,
     nudgeLocation,
+    setExactLocation,
+    resumeRealGps,
+    isUsingSimulatedLocation,
   } = useGeolocation({
     defaultCenter: gameState?.boundary?.center || { lat: 11.1005, lng: 76.9683 },
     initialFloor: 0,
@@ -266,7 +271,12 @@ export const AppContent: React.FC = () => {
         onFloorChange={setFloor}
         gpsAccuracy={gpsAccuracy}
         accuracyQuality={accuracyQuality}
+        gpsError={gpsError}
+        hasRealGpsFix={hasRealGpsFix}
         onNudgeLocation={nudgeLocation}
+        onSetExactLocation={setExactLocation}
+        onResumeRealGps={resumeRealGps}
+        isCalibrated={isUsingSimulatedLocation}
       />
 
       {/* Bottom Floating Tactical HUDs depending on role & status */}
