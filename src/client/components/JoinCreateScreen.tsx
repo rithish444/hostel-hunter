@@ -19,7 +19,7 @@ export const JoinCreateScreen: React.FC<JoinCreateScreenProps> = ({
   // Form states
   const [playerName, setPlayerName] = useState('');
   const [roomCode, setRoomCode] = useState('');
-  const [gameName, setGameName] = useState('Hostel Hunt Alpha');
+  const [gameName, setGameName] = useState("SREC Men's Hostel 2");
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
   const [loading, setLoading] = useState(false);
 
@@ -39,7 +39,39 @@ export const JoinCreateScreen: React.FC<JoinCreateScreenProps> = ({
 
     setLoading(true);
     clearError();
-    await createRoom(playerName.trim(), gameName.trim());
+
+    let hostCenter = { lat: 11.1005, lng: 76.9683 };
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      try {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 3000,
+            maximumAge: 10000,
+          });
+        });
+        if (pos.coords.latitude && pos.coords.longitude) {
+          hostCenter = {
+            lat: Number(pos.coords.latitude.toFixed(6)),
+            lng: Number(pos.coords.longitude.toFixed(6)),
+          };
+        }
+      } catch {
+        // Fallback directly to SREC Men's Hostel 2
+        hostCenter = { lat: 11.1005, lng: 76.9683 };
+      }
+    }
+
+    await createRoom(
+      playerName.trim(),
+      gameName.trim() || "SREC Men's Hostel 2 Hunt",
+      undefined,
+      {
+        center: hostCenter,
+        radius: 160,
+        name: "SREC Men's Hostel 2 Perimeter",
+      }
+    );
     setLoading(false);
   };
 
@@ -180,7 +212,7 @@ export const JoinCreateScreen: React.FC<JoinCreateScreenProps> = ({
               </label>
               <input
                 type="text"
-                placeholder="e.g. Hostel Hunt Block-A"
+                placeholder="e.g. SREC Men's Hostel 2"
                 value={gameName}
                 onChange={(e) => setGameName(e.target.value)}
                 maxLength={30}

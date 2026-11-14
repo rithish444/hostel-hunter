@@ -27,32 +27,33 @@ interface MapViewProps {
   onNudgeLocation?: (dLat: number, dLng: number) => void;
 }
 
-type MapTheme = 'dark' | 'streets' | 'satellite' | 'google';
+type MapTheme = 'streets' | 'satellite';
 
-const TILE_PROVIDERS: Record<MapTheme, { name: string; url: string; attribution: string; maxZoom: number }> = {
+interface TileProviderConfig {
+  name: string;
+  url: string;
+  attribution: string;
+  maxZoom: number;
+  maxNativeZoom: number;
+  className: string;
+}
+
+const TILE_PROVIDERS: Record<MapTheme, TileProviderConfig> = {
   streets: {
-    name: 'OSM Streets',
+    name: 'Dark Streets (OpenStreetMap)',
     url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; OpenStreetMap contributors',
-    maxZoom: 19,
-  },
-  dark: {
-    name: 'Dark Matter',
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; CARTO &copy; OpenStreetMap',
-    maxZoom: 20,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors',
+    maxZoom: 21,
+    maxNativeZoom: 19,
+    className: 'dark-osm-tiles',
   },
   satellite: {
-    name: 'Satellite Aerial',
+    name: 'Satellite Aerial (Esri)',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: '&copy; Esri World Imagery',
-    maxZoom: 19,
-  },
-  google: {
-    name: 'Google Maps',
-    url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
-    attribution: '&copy; Google Maps',
-    maxZoom: 20,
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
+    maxZoom: 21,
+    maxNativeZoom: 18,
+    className: 'satellite-tiles',
   },
 };
 
@@ -79,9 +80,9 @@ export const MapView: React.FC<MapViewProps> = ({
   const accuracyCircleRef = useRef<L.Circle | null>(null);
 
   const [mapTheme, setMapTheme] = useState<MapTheme>('streets');
-  const [showThemePicker, setShowThemePicker] = useState<boolean>(false);
   const [selectedFloorFilter, setSelectedFloorFilter] = useState<number | 'all'>('all');
   const [showDesktopControls, setShowDesktopControls] = useState<boolean>(false);
+  const hasAutoCenteredRef = useRef(false);
 
   // Initialize Map instance
   useEffect(() => {
@@ -95,14 +96,17 @@ export const MapView: React.FC<MapViewProps> = ({
       center: [initialLat, initialLng],
       zoom: 18,
       zoomControl: false,
-      attributionControl: false,
+      attributionControl: true,
     });
 
     // Add initial tile layer
     const provider = TILE_PROVIDERS[mapTheme];
     const tileLayer = L.tileLayer(provider.url, {
       maxZoom: provider.maxZoom,
-      subdomains: 'abcd',
+      maxNativeZoom: provider.maxNativeZoom,
+      attribution: provider.attribution,
+      className: provider.className,
+      subdomains: 'abc',
     }).addTo(map);
     activeTileLayerRef.current = tileLayer;
 
@@ -144,7 +148,10 @@ export const MapView: React.FC<MapViewProps> = ({
     const provider = TILE_PROVIDERS[mapTheme];
     const newTileLayer = L.tileLayer(provider.url, {
       maxZoom: provider.maxZoom,
-      subdomains: 'abcd',
+      maxNativeZoom: provider.maxNativeZoom,
+      attribution: provider.attribution,
+      className: provider.className,
+      subdomains: 'abc',
     }).addTo(mapInstanceRef.current);
 
     activeTileLayerRef.current = newTileLayer;
@@ -372,9 +379,20 @@ export const MapView: React.FC<MapViewProps> = ({
     }
   }, [gameState, player, selectedFloorFilter]);
 
+  // Auto-center map on first high/medium accuracy real GPS fix
+  useEffect(() => {
+    if (!mapInstanceRef.current || hasAutoCenteredRef.current) return;
+    if (accuracyQuality === 'high' || accuracyQuality === 'medium') {
+      hasAutoCenteredRef.current = true;
+      mapInstanceRef.current.setView([currentLocation.lat, currentLocation.lng], 18, { animate: true });
+    }
+  }, [currentLocation, accuracyQuality]);
+
   const recenterMap = () => {
     if (mapInstanceRef.current) {
-      mapInstanceRef.current.setView([currentLocation.lat, currentLocation.lng], 18, { animate: true });
+      const targetLat = currentLocation?.lat || gameState?.boundary?.center?.lat || 11.1005;
+      const targetLng = currentLocation?.lng || gameState?.boundary?.center?.lng || 76.9683;
+      mapInstanceRef.current.setView([targetLat, targetLng], 18, { animate: true });
       mapInstanceRef.current.invalidateSize();
     }
   };
@@ -452,13 +470,22 @@ export const MapView: React.FC<MapViewProps> = ({
           <Crosshair className="w-5 h-5" />
         </button>
 
-        {/* Map Tile Theme Switcher */}
+        {/* Free Keyless Layer Toggle: Dark Street (OSM) / Satellite Aerial (Esri) */}
         <button
-          onClick={() => setShowThemePicker(!showThemePicker)}
-          className="w-11 h-11 bg-slate-900/95 hover:bg-slate-800 active:scale-95 border border-slate-700 rounded-full shadow-xl flex items-center justify-center text-amber-400 backdrop-blur-md transition"
-          title="Switch Map Layers (OpenStreetMap, Dark, Satellite, Google)"
+          onClick={() => setMapTheme((prev) => (prev === 'streets' ? 'satellite' : 'streets'))}
+          className={`relative w-11 h-11 rounded-full shadow-xl flex flex-col items-center justify-center border backdrop-blur-md transition active:scale-95 ${
+            mapTheme === 'satellite'
+              ? 'bg-amber-950/90 border-amber-500 text-amber-300 shadow-amber-950/50'
+              : 'bg-slate-900/95 border-slate-700 text-cyan-400 hover:bg-slate-800'
+          }`}
+          title={`Active: ${TILE_PROVIDERS[mapTheme].name}. Tap to switch to ${
+            mapTheme === 'streets' ? 'Satellite Aerial (Esri)' : 'Dark Streets (OpenStreetMap)'
+          }`}
         >
-          <Layers className="w-5 h-5" />
+          <Layers className="w-4 h-4" />
+          <span className="text-[8px] font-mono font-black uppercase tracking-tight mt-0.5">
+            {mapTheme === 'streets' ? 'MAP' : 'SAT'}
+          </span>
         </button>
 
         {/* Hunter Radar Pulse Power-Up */}
@@ -490,31 +517,7 @@ export const MapView: React.FC<MapViewProps> = ({
         </button>
       </div>
 
-      {/* Map Theme / Tile Provider Picker Menu */}
-      {showThemePicker && (
-        <div className="absolute bottom-24 right-16 z-[450] bg-slate-900/95 border border-slate-700 p-2 rounded-2xl shadow-2xl backdrop-blur-lg flex flex-col gap-1 min-w-[150px]">
-          <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider px-2 py-1 font-bold">
-            Select Map Style
-          </div>
-          {(Object.keys(TILE_PROVIDERS) as MapTheme[]).map((key) => (
-            <button
-              key={key}
-              onClick={() => {
-                setMapTheme(key);
-                setShowThemePicker(false);
-              }}
-              className={`text-left text-xs px-2.5 py-1.5 rounded-xl font-medium transition flex items-center justify-between ${
-                mapTheme === key
-                  ? 'bg-cyan-600 text-white font-bold'
-                  : 'text-slate-300 hover:bg-slate-800'
-              }`}
-            >
-              <span>{TILE_PROVIDERS[key].name}</span>
-              {mapTheme === key && <span className="text-[10px]">✓</span>}
-            </button>
-          ))}
-        </div>
-      )}
+
 
       {/* Desktop Simulation D-Pad for Testing in Browser */}
       {showDesktopControls && onNudgeLocation && (

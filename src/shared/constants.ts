@@ -1,10 +1,9 @@
 import { GameSettings, BoundarySettings, RedZone, TaskItem } from './types.js';
 
-// Default hostel location (can be customized or centered to user's real GPS)
-// We default to a representative college / hostel campus coordinates
+// Default campus location: Sri Ramakrishna Engineering College (SREC), Men's Hostel 2, Coimbatore
 export const DEFAULT_CAMPUS_CENTER = {
-  lat: 12.9716, // Bangalore / typical tech hub campus latitude
-  lng: 77.5946,
+  lat: 11.1005, // SREC Men's Hostel 2, Vattamalaipalayam, Coimbatore
+  lng: 76.9683,
 };
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -21,8 +20,8 @@ export const DEFAULT_SETTINGS: GameSettings = {
   defaultFloor: 0,
   floors: [
     { level: 0, name: 'Ground Floor (Lobby & Mess)' },
-    { level: 1, name: '1st Floor (Dorm A)' },
-    { level: 2, name: '2nd Floor (Dorm B)' },
+    { level: 1, name: '1st Floor (Hostel 2 Rooms A)' },
+    { level: 2, name: '2nd Floor (Hostel 2 Rooms B)' },
     { level: 3, name: '3rd Floor (Reading Room)' },
     { level: 4, name: 'Terrace (Out of Bounds)' },
   ],
@@ -30,15 +29,15 @@ export const DEFAULT_SETTINGS: GameSettings = {
 
 export const DEFAULT_BOUNDARY: BoundarySettings = {
   center: DEFAULT_CAMPUS_CENTER,
-  radius: 120, // 120 meter radius around hostel
-  name: 'Hostel Complex Perimeter',
+  radius: 160, // 160 meter radius around SREC Men's Hostel 2
+  name: "SREC Men's Hostel 2 Perimeter",
 };
 
 export const DEFAULT_RED_ZONES: RedZone[] = [
   {
     id: 'rz-terrace',
-    name: 'Terrace & Parapet',
-    center: { lat: 12.9718, lng: 77.5948 },
+    name: 'Hostel 2 Roof Terrace',
+    center: { lat: 11.1006, lng: 76.9684 },
     radius: 25,
     floor: 4,
     description: 'Hazard: Fall risk. Off-limits during game!',
@@ -47,16 +46,16 @@ export const DEFAULT_RED_ZONES: RedZone[] = [
   {
     id: 'rz-generator',
     name: 'Electrical & Generator Room',
-    center: { lat: 12.9712, lng: 77.5943 },
-    radius: 18,
+    center: { lat: 11.1003, lng: 76.9681 },
+    radius: 20,
     floor: 0,
     description: 'High voltage electrical equipment. Entry forbidden!',
     severity: 'danger',
   },
   {
     id: 'rz-warden',
-    name: 'Warden Quarters & Admin',
-    center: { lat: 12.9721, lng: 77.5944 },
+    name: 'Hostel 2 Warden Office',
+    center: { lat: 11.1007, lng: 76.9682 },
     radius: 20,
     floor: 0,
     description: 'Quiet study zone / Admin office. Do not disturb.',
@@ -64,11 +63,11 @@ export const DEFAULT_RED_ZONES: RedZone[] = [
   },
   {
     id: 'rz-stairs-rear',
-    name: 'Damaged Rear Emergency Stairwell',
-    center: { lat: 12.9714, lng: 77.5951 },
+    name: 'Rear Service Stairwell',
+    center: { lat: 11.1004, lng: 76.9685 },
     radius: 15,
     floor: 'all',
-    description: 'Construction and wet floor hazard.',
+    description: 'Maintenance area and hazard.',
     severity: 'danger',
   },
 ];

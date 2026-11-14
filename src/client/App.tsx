@@ -52,7 +52,7 @@ export const AppContent: React.FC = () => {
     setFloor,
     nudgeLocation,
   } = useGeolocation({
-    defaultCenter: gameState?.boundary?.center || { lat: 12.9716, lng: 77.5946 },
+    defaultCenter: gameState?.boundary?.center || { lat: 11.1005, lng: 76.9683 },
     initialFloor: 0,
     onLocationChange: (loc) => {
       reportLocation(loc);

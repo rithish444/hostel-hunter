@@ -222,14 +222,49 @@ export const HostControlPanel: React.FC<HostControlPanelProps> = ({ onClose }) =
                 />
               </div>
 
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
                 <div className="font-bold text-slate-300">Geofence Coordinates:</div>
+                <div className="font-mono text-[11px] text-cyan-400">
+                  {gameState.boundary.name || "SREC Men's Hostel 2"}
+                </div>
                 <div className="font-mono text-[11px] text-slate-400">
                   Lat: {gameState.boundary.center.lat.toFixed(6)} | Lng:{' '}
                   {gameState.boundary.center.lng.toFixed(6)}
                 </div>
                 <div className="text-[10px] text-slate-500">
                   Grace period allowed when exiting: {gameState.settings.gracePeriodSeconds}s
+                </div>
+
+                <div className="flex flex-col gap-1.5 pt-1">
+                  {player.location && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateBoundary({
+                          ...gameState.boundary,
+                          center: { lat: player.location!.lat, lng: player.location!.lng },
+                          name: "Host's Real GPS Location",
+                        });
+                      }}
+                      className="w-full bg-cyan-900/80 hover:bg-cyan-800 border border-cyan-600 text-cyan-200 font-bold py-1.5 rounded-lg text-xs transition"
+                    >
+                      📍 Center Boundary on My Current GPS
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateBoundary({
+                        ...gameState.boundary,
+                        center: { lat: 11.1005, lng: 76.9683 },
+                        name: "SREC Men's Hostel 2 Perimeter",
+                      });
+                    }}
+                    className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold py-1.5 rounded-lg text-xs transition"
+                  >
+                    🏫 Reset to SREC Men's Hostel 2
+                  </button>
                 </div>
               </div>
             </div>
@@ -393,7 +428,7 @@ export const HostControlPanel: React.FC<HostControlPanelProps> = ({ onClose }) =
                   You can also switch map styles using the floating <span className="text-amber-400 font-bold">Layers icon</span> on the map screen.
                 </p>
                 <div className="text-[10px] text-slate-500 font-mono bg-slate-900 p-2 rounded-lg border border-slate-800">
-                  Supported: OSM Standard, Dark Matter, Esri Satellite, Google Maps.
+                  Supported: OpenStreetMap (Tactical Dark) & Esri World Imagery (Satellite). 100% free with zero API keys required.
                 </div>
               </div>
 

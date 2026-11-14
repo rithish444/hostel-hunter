@@ -23,7 +23,7 @@ We chose a **Progressive Web App (PWA)** built with **React 19 + TypeScript + Vi
    - An in-memory authoritative Node.js game engine calculates proximity, rate-limits updates, runs unbiased cryptographic role shuffles, and generates role-sanitized state payloads with sub-50ms latency.
 3. **OpenStreetMap / Leaflet vs Google Maps SDK**:
    - Google Maps requires entering a credit card, generating API keys, and risking surprise billing spikes when 12+ phones emit location updates every 2-5 seconds.
-   - Leaflet with CartoDB Voyager tiles is completely free, open-source, requires zero API keys, and supports dark-mode tactical maps out of the box.
+   - Leaflet with free OpenStreetMap (styled with dark CSS filter) and Esri World Imagery satellite tiles is completely free, open-source, and requires zero API keys.
 4. **Zero-Configuration Deployment**:
    - The combined server can be deployed for **$0** on Render, Railway, Fly.io, or Heroku, or run locally on a hostel WiFi hotspot.
 

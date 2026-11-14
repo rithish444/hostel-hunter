@@ -9,7 +9,7 @@ interface UseGeolocationOptions {
 }
 
 export function useGeolocation({
-  defaultCenter = { lat: 12.9716, lng: 77.5946 },
+  defaultCenter = { lat: 11.1005, lng: 76.9683 },
   initialFloor = 0,
   onLocationChange,
 }: UseGeolocationOptions = {}) {
